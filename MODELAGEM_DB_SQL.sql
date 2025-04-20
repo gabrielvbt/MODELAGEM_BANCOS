@@ -124,6 +124,7 @@ SELECT NOME_LIVRO FROM LIVROS;
 SELECT ID_LIVRO AS "Cod do Livro" FROM LIVROS;
 
 -- =========================== FILTROS ===========================
+
 -- AND, NOT, OR, >, <, <> (diferente), 
 SELECT * FROM LIVROS
 WHERE CATEGORIA = 'BIOGRAFIA';
@@ -137,16 +138,19 @@ WHERE ID_VENDEDOR = 1
 ORDER BY ID_LIVRO;
 
 -- =========================== REMOCAO DE LINHAS ===========================
+
 DELETE FROM LIVROS WHERE ID_LIVRO = 8;
 
 -- =========================== ALTERACAO DE VALORES ===========================
+
 UPDATE LIVROS SET PRECO = 0.9*PRECO;
 
 -- =========================== FILTROS MULTI-TABELAS ===========================
+
 SELECT VENDAS.ID_VENDEDOR, VENDEDORES.NOME_VENDEDOR, VENDAS.QTD_VENDIDA
 FROM VEMDAS, VENDEDORES
 
--- SOMATORIA DE LIVROS VENDIDOS
+-- SOMATORIA DE LIVROS VENDIDOS / AGRUPAMENTO P SOMA
 SELECT VENDAS.ID_VENDEDOR, VENDEDORES.NOME_VENDEDOR, SUM(VENDAS.QTD_VENDIDA)
 FROM VEMDAS, VENDEDORES
 WHERE VENDAS.ID_VENDEDOR = VENDEDORES.ID_VENDEDOR
@@ -154,9 +158,81 @@ GROUP BY VENDAS.ID_VENDEDOR;
 
 -- =========================== UNIAO DE TABELAS ===========================
 
+-- inner: somente o que estão em ambas as tabelas
+-- left: inclui na tabela da esquerda o que há de igual na tabela da direita
+-- right: inclui na tabela da direita o que há de igual na tabela da esquerda
+-- outer: mantem somente os exclusivos de cada tabela
 
--- ===========================  ===========================
--- ===========================  ===========================
+SELECT VENDAS.ID_VENDEDOR, VENDEDORES.NOME_VENDEDOR, SUM(VENDAS.QTD_VENDIDA)
+FROM VEMDAS INNER JOIN VENDEDORES
+ON VENDAS.ID_VENDEDOR = VENDEDORES.ID_VENDEDOR
+GROUP BY VENDAS.ID_VENDEDOR; 
+
+SELECT VENDAS.ID_VENDEDOR, VENDEDORES.NOME_VENDEDOR
+FROM VEMDAS LEFT JOIN VENDEDORES
+ON VENDAS.ID_VENDEDOR = VENDEDORES.ID_VENDEDOR
+WHERE VENDAS.QTD_VENDIDA IS NULL;
+
+-- =====================================================================
+-- =====================================================================
+-- PARA OS TRECHOS ABAIXO, ASSUMA QUE ESTAMOS EM OUTRO PROJETO
+-- A TABELA "tabelapedidos" FOI IMPORTADA DE UM ARQUIVO PARA O SQLITE
+
+-- =========================== INSERINDO VALORES COM SELECT ===========================
+CREATE TABLE tabelapedidosgold (
+    ID_pedido_gold INT PRIMARY KEY,
+    Data_Do_Pedido_gold DATE,
+    Status_gold VARCHAR(50),
+    Total_Do_Pedido_gold DECIMAL(10, 2),
+    Cliente_gold INT,
+    Data_De_Envio_Estimada_gold DATE,
+    FOREIGN KEY (cliente_gold) REFERENCES tabelaclientes(id_cliente)
+); 
+
+INSERT INTO tabelapedidosgold(
+            ID_pedido_gold,
+            Data_Do_Pedido_gold,
+            Status_gold,
+            Total_Do_Pedido_gold,
+            cliente_gold,
+            Data_De_Envio_Estimada_gold)
+SELECT id, data_do_pedido, status, total_do_pedido, cliente, data_de_envio_estimada
+FROM tabelapedidos
+WHERE total_do_pedido >= 400;
+
+-- =========================== FILTRO LIKE ===========================
+-- BUSCA TODOS OS CURSOS QUE INICIAM COM "Ciência"
+SELECT * FROM Treinamento
+WHERE curso LIKE "Ciência %";
+
+-- =========================== CONDICAO IN ===========================
+-- TRÁS TODAS AS INFORMAÇÕES DOS CURSOS EM UMA LISTA 
+SELECT * FROM Treinamento
+WHERE curso IN ('Ciência da Computação', 'Engenharia de Materiais', 'Engenharia Biomédica', 'Matemática Computacional')
+
+-- =========================== AGG FUNCS ===========================
+SELECT mes, MAX(faturamento_bruto) FROM faturamento;
+
+SELECT mes, MIN(faturamento_bruto) FROM faturamento;
+
+SELECT AVG(despesas) FROM faturamento;
+
+SELECT COUNT(*) FROM HistoricoEmprego
+WHERE datatermino NOT NULL;
+
+-- =========================== HAVING ===========================
+-- COMO WHERE FUNCIONA SOMENTE PARA REGISTROS UNICOS, ENTÃO, PARA AGRUPAMENTOS, PODEMOS USAR HAVING:
+SELECT instituicao, COUNT(curso)
+FROM Treinamento
+GROUP BY instituicao
+HAVING COUNT(curso) > 2;
+
+-- =========================== REMOCAO DE ESPAÇOS DO INICIO E FIM DE STRINGS ===========================
+SELECT TRIM(nome) FROM tabela;
+
+-- =========================== REPLACE ===========================
+SELECT REPLACE(saudacao, 'hello', 'hi') FROM tabela;
+
 -- ===========================  ===========================
 -- ===========================  ===========================
 
