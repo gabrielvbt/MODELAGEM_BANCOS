@@ -162,6 +162,7 @@ GROUP BY VENDAS.ID_VENDEDOR;
 -- left: inclui na tabela da esquerda o que há de igual na tabela da direita
 -- right: inclui na tabela da direita o que há de igual na tabela da esquerda
 -- outer: mantem somente os exclusivos de cada tabela
+-- cross: produto cartesiano (todas as possiblidades de combinações) das linhas de uma tabela com a outra
 
 SELECT VENDAS.ID_VENDEDOR, VENDEDORES.NOME_VENDEDOR, SUM(VENDAS.QTD_VENDIDA)
 FROM VEMDAS INNER JOIN VENDEDORES
@@ -189,13 +190,12 @@ CREATE TABLE tabelapedidosgold (
     FOREIGN KEY (cliente_gold) REFERENCES tabelaclientes(id_cliente)
 ); 
 
-INSERT INTO tabelapedidosgold(
-            ID_pedido_gold,
-            Data_Do_Pedido_gold,
-            Status_gold,
-            Total_Do_Pedido_gold,
-            cliente_gold,
-            Data_De_Envio_Estimada_gold)
+INSERT INTO tabelapedidosgold(ID_pedido_gold,
+                              Data_Do_Pedido_gold,
+                              Status_gold,
+                              Total_Do_Pedido_gold,
+                              cliente_gold,
+                              Data_De_Envio_Estimada_gold)
 SELECT id, data_do_pedido, status, total_do_pedido, cliente, data_de_envio_estimada
 FROM tabelapedidos
 WHERE total_do_pedido >= 400;
@@ -233,6 +233,105 @@ SELECT TRIM(nome) FROM tabela;
 -- =========================== REPLACE ===========================
 SELECT REPLACE(saudacao, 'hello', 'hi') FROM tabela;
 
--- ===========================  ===========================
--- ===========================  ===========================
+-- =========================== CONSULTA DE DATAS ===========================
+SELECT id_colaborador, STRFTIME('%Y/%m', data_inicio) FROM Licencas;
 
+-- DIFERENÇA ENTRE DATAS
+SELECT id_colaborador, JULIANDAY(datatermino) - JULIANDAY(datacontratacao) FROM HistoricoEmprego
+WHERE datatermino IS NOT NULL;
+
+-- RETORNAR A DATA ATUAL - O MESMO É VALIDO PARA TIME e DATETIME
+SELECT DATE('now');
+-- RETORNA 10 DIAS ATRÁS
+SELECT DATE('now', '-10 days');
+
+-- =========================== CONSULTAS NUMÉRICAS ===========================
+-- ARREDONDANDO COM DUAS CASA DECIMAIS
+SELECT AVG(faturamento_bruto), ROUND(AVG(faturamento_bruto), 2) FROM faturamento;
+
+-- ARREDONDAMENTO PRA CIMA OU PARA BAIXO
+SELECT CEIL(faturamento_bruto), CEIL(despesas) FROM faturamento;
+SELECT FLOOR(faturamento_bruto), FLOOR(despesas) FROM faturamento;
+
+-- ELEVAR NUMEROS A POTENCIA
+SELECT POWER(2, 3); -- 2^3 = 8
+SELECT SQRT(16); -- Raiz de 16
+SELECT ABS(-5); -- Retorna o absoluto no caso de -5 seria 5
+
+-- =========================== CONVERSÃO DE TIPO DE DADO ===========================
+SELECT('O faturamento bruto médio foi ' || CAST(ROUND(AVG(faturamento_bruto), 2) AS TEXT))
+FROM faturamento;
+
+-- =========================== EXPRESSAO CASE ===========================
+SELECT id_colaborador, cargo, salario,
+CASE
+    WHEN salario < 3000 THEN 'Baixo'
+    WHEN salario BETWEEN 3000 AND 6000 THEN 'Médio'
+    ELSE 'Alto'
+END AS categoria_salario
+FROM HistoricoEmprego;
+
+-- =========================== RENAME ===========================
+ALTER TABLE HistoricoEmprego RENAME TO CargosColaboradores;
+
+-- =======================================================================================================
+-- ====================== A PARTIR DE AGORA, SERÁ UTILIZADO NOMEMCLATURA GERAL ===========================
+-- =======================================================================================================
+
+-- =========================== OPERADORES INTER TABELAS ===========================
+-- RETORNA APENAS REGISTROS DISTINTOS ENTRE AS TABELAS
+SELECT coluna1, coluna2, coluna3 FROM tabela1
+UNION
+SELECT coluna1, coluna2, coluna3 FROM tabela2
+
+-- RETORNA TODOS OS REGISTROS MESMO QUE ESTEJAM REPETIDOS ENTRE AS TABELAS
+SELECT coluna1, coluna2, coluna3 FROM tabela1
+UNION ALL
+SELECT coluna1, coluna2, coluna3 FROM tabela2
+
+-- RETORNA TODAS AS LINHAS PRESENTES NA TABELA 1, AUSENTES NA TABELA2
+SELECT * FROM tabela1
+EXCEPT
+SELECT * FROM tabela2;
+
+-- RETORNA TODAS AS LINHAS PRESENTES NA TABELA 1 E NA TABELA 2 AO MESMO TEMPO
+SELECT * FROM tabela1
+INTERSECT
+SELECT * FROM tabela2;
+
+-- =========================== SUBCONSULTAS ===========================
+SELECT coluna1, coluna2 FROM tabela1 WHERE coluna1 = (SELECT coluna1 FROM tabela2 WHERE coluna2 = 1)
+SELECT coluna1, coluna2 FROM tabela1 WHERE coluna1 IN (SELECT coluna1 FROM tabela2 WHERE coluna2 = 1)
+
+-- =========================== VIEWS ===========================
+CREATE VIEW viewCurso AS 
+SELECT coluna3, coluna4 FROM tabela1
+
+-- =========================== TRIGGER ===========================
+CREATE TRIGGER triggerCurso
+AFTER INSERT ON tabela1
+FOR EACH ROW
+BEGIN
+    DELETE FROM tabela3;
+    INSERT INTO tabela3 (coluna3, coluna4)
+    SELECT coluna3, coluna4 FROM tabela3
+END;
+
+-- =========================== TRANSAÇÕES ===========================
+-- CAMADA DE SEGURANÇA PARA ROLLBACK CASO HAJA PROBLEMAS
+-- EXECUTAR LINHA A LINHA
+BEGIN TRANSACTION; -- START TRANSACTION tem o mesmo efeito
+
+UPDATE tabela1 SET coluna1 = 'TESTE'
+
+SELECT coluna1 FROM tabela1 -- APOS VERIFICAR SE O VALOR FOI ATUALIZADO CORRETAMENTE:
+
+-- CASO HAJA PROBLEMAS:
+ROLLBACK;
+
+-- CASO A ALTERAÇÃO TENHA SIDO FEITA DE MANEIRA CORRETA?
+COMMIT;
+
+
+-- ===========================  ===========================
+-- ===========================  ===========================
